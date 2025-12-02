@@ -42,7 +42,11 @@ class _MyHomePageState extends State<MyHomePage> {
     var listaData = response.data as List;
 
     for (var data in listaData) {
-      var tarefa = Tarefa(descricao: data['descricao'], titulo: data['titulo']);
+      var tarefa = Tarefa(
+        id: data['id'],
+        descricao: data['descricao'],
+        titulo: data['titulo'],
+      );
       tarefas.add(tarefa);
     }
 
@@ -79,7 +83,10 @@ class _MyHomePageState extends State<MyHomePage> {
                   leading: Icon(Icons.task),
                   title: Text(tarefas[index].titulo),
                   subtitle: Text(tarefas[index].descricao),
-                  trailing: Icon(Icons.arrow_right_alt_outlined),
+                  trailing: IconButton(
+                    icon: Icon(Icons.delete_outline_outlined),
+                    onPressed: () => _onPressedDeleteButton(tarefas[index].id),
+                  ),
                 );
               },
             ),
@@ -114,5 +121,50 @@ class _MyHomePageState extends State<MyHomePage> {
 
     //     controllerDescricao.clear();
     //     controllerTitulo.clear();
+  }
+
+  void _onPressedDeleteButton(String id) async {
+    showDialog(
+      context: context,
+      builder: (_) {
+        return AlertDialog(
+          title: Text("Deletar registro"),
+          content: Text("Deseja deletar este registro?"),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text("Cancelar"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                _excluirTarefa(id);
+              },
+              child: Text("Deletar"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _excluirTarefa(String id) async {
+    var dio = Dio(
+      BaseOptions(
+        connectTimeout: Duration(seconds: 30),
+        baseUrl: 'https://6912666052a60f10c8218ac5.mockapi.io/api/v1',
+      ),
+    );
+    var response = await dio.delete('/tarefa/$id');
+    if (response.statusCode == 200) {
+    } else {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erro ao deletar tarefa')));
+    }
+    Navigator.pop(context);
+    _getTarefas();
   }
 }
